@@ -15,7 +15,7 @@ This project includes 4 Python files that work together to scan Bitcoin private 
 4. main.py - This file is the main entry point for the program. It initializes the FileManagement and Scan objects, launches a Flask web server to display real-time statistics, and runs the scan using command-line arguments.
 
 
-#Installation
+# Installation
 
 ### Clone the repository
 ```bash
