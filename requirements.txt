@@ -1,6 +1,6 @@
 Flask==2.1.2
 argparse==1.4.0
 base58==2.1.0
-bit>=0.9.4
-concurrent.futures==3.1.0
+bit==0.8.0
+futures==3.0.5
 requests==2.27.1
