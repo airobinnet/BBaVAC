@@ -1,7 +1,6 @@
 import argparse
 import sys
 import time
-import concurrent.futures
 import threading
 import logging
 from flask import Flask, render_template, jsonify

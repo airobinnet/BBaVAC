@@ -14,11 +14,11 @@ CYAN = "\033[1;36m"
 RESET = "\033[0m"  # reset to default color
 
 class Scan:
-    def __init__(self, file, max_threads=20):
+    def __init__(self, file):
         self.file = file  # File instance for reading and writing results
         self.balancetotal = 0  # Total balance across all discovered addresses
         self.noemptyaddr = 0  # Number of non-empty addresses discovered
-        self.max_threads = max_threads  # Maximum number of threads to use
+        self.max_threads = 3  # Maximum number of threads to use
         self.discoveries = []  # List of discovered addresses
         self.fancies = []  # List of "fancy" addresses (containing words from wordlist)
         self.checked = 0  # Number of keys checked so far
@@ -134,7 +134,8 @@ class Scan:
             # Loop indefinitely until we have found enough discoveries
             while True:
                 # Submit a new future for each balance check
-                futures.append(executor.submit(self._check_balance))
+                for x in range(self.max_threads):
+                    futures.append(executor.submit(self._check_balance))
                 # Check the results of futures that have completed
                 for future in as_completed(futures):
                     future.result()
