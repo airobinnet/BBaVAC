@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stats</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        a {
+            color: #f8f9fa;
+            text-decoration: none;
+        }
+        /* Custom Styles */
+        body {
+            background-color: #1a1a1a;
+            color: #f8f9fa;
+        }
+
+        .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            color: #f8f9fa;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function convertSeconds(seconds) {
+            const daySeconds = 86400; // number of seconds in a day
+            const hourSeconds = 3600; // number of seconds in an hour
+            const minuteSeconds = 60; // number of seconds in a minute
+
+            const days = Math.floor(seconds / daySeconds);
+            const hours = Math.floor((seconds % daySeconds) / hourSeconds);
+            const minutes = Math.floor((seconds % hourSeconds) / minuteSeconds);
+            const remainingSeconds = seconds % minuteSeconds;
+
+            return { days, hours, minutes, seconds: remainingSeconds };
+            }
+        function refreshStats() {
+            $.getJSON('/stats.json', function(data) {
+                totalplussymbol = data.balancetotal + ' ₿';
+                $('#balancetotal').html(
+                    totalplussymbol
+                );
+                $('#noemptyaddr').html(
+                    data.noemptyaddr
+                );
+                $('#fanciesNumber').html(
+                    data.fancies.length
+                );
+                const fanciesList = $('#fanciesList');
+                const wordlist = data.wordlist;
+                fanciesList.empty();
+                $.each(data.fancies, function(index, value) {
+                let itemText = value;
+                let ogAddress = value;
+                for (const word of wordlist) {
+                    // highlight the found string
+                    const regex = new RegExp(`(${word})`, 'gi');
+                    itemText = itemText.replace(regex, '<span style="font-weight:bold; color:green;">$1</span>');
+                }
+                const listItem = $('<li>').html(itemText);
+                const link = $('<a>').attr({
+                    'href': `https://www.blockchain.com/explorer/addresses/btc/${ogAddress}`,
+                    'target': '_blank',
+                }).append(listItem);
+                link.appendTo(fanciesList);
+                });
+                $('#checked').html(
+                    data.checked
+                );
+                $('#totaltime').html(
+                    convertSeconds(data.totaltime).days + 'd ' + convertSeconds(data.totaltime).hours + 'h ' + convertSeconds(data.totaltime).minutes + 'm ' + convertSeconds(data.totaltime).seconds + 's'
+                );
+                $('#average').html(
+                    data.average
+                );
+                const balanceList = $('#balanceList');
+                balanceList.empty();
+                $.each(data.balancelist, function(index, value) {
+                const listBItem = $('<li>').html(value);
+                const linkB = $('<a>').attr({
+                    'href': `https://www.blockchain.com/explorer/addresses/btc/${value}`,
+                    'target': '_blank',
+                }).append(listBItem);
+                linkB.appendTo(balanceList);
+                });
+            });
+        }
+        $(document).ready(function() {
+            setInterval(refreshStats, 1000);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">Stats</h1>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Balance</h5>
+                        <p class="card-text"><div id="balancetotal">0</div></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Balance Addresses</h5>
+                        <p class="card-text"><div id="noemptyaddr">0</div></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Vanity Addresses</h5>
+                        <p class="card-text"><div id="fanciesNumber">0</div></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Checked</h5>
+                        <p class="card-text"><div id="checked">0</div></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Time</h5>
+                        <p class="card-text"><div id="totaltime">0</div></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average per second</h5>
+                        <p class="card-text"><div id="average">0</div></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <h3>Vanity Addresses:</h3>
+        <ul id="fanciesList"></ul>
+    </div>
+    <div class="container">
+        <h3>Balance Addresses:</h3>
+        <ul id="balanceList"></ul>
+    </div>
+    <!-- Include Bootstrap JS and jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
