@@ -84,7 +84,7 @@ if __name__ == '__main__':
     file = FileManagement(outputfile, inputfile)
 
     # The scan object is initialized
-    scan = Scan(file, max_threads=20)
+    scan = Scan(file)
     # Start the stats update thread
     stats_thread = threading.Thread(target=update_stats)
     stats_thread.daemon = True
