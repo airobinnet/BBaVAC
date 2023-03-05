@@ -1,5 +1,8 @@
 # BBaVAC
  Bitcoin Balance and Vanity Address Checker
+
+![BBaVAC](https://i.imgur.com/o3Heufc.png "BBaVAC")
+
 #### Summary
 This project includes 4 Python files that work together to scan Bitcoin private keys for balances and vanity addresses:
 
@@ -13,6 +16,7 @@ This project includes 4 Python files that work together to scan Bitcoin private 
 
 
 #Installation
+
 ### Clone the repository
 ```bash
 git clone https://github.com/airobinnet/BBaVAC.git
