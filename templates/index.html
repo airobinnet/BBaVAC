@@ -1,164 +1,288 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Stats</title>
-    <!-- Include Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        a {
-            color: #f8f9fa;
-            text-decoration: none;
-        }
-        /* Custom Styles */
-        body {
-            background-color: #1a1a1a;
-            color: #f8f9fa;
-        }
-
-        .card {
-            background-color: #343a40;
-            color: #f8f9fa;
-            margin-bottom: 1rem;
-        }
-
-        .card-title {
-            color: #f8f9fa;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBaVAC | TERMINAL ENGINE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        function convertSeconds(seconds) {
-            const daySeconds = 86400; // number of seconds in a day
-            const hourSeconds = 3600; // number of seconds in an hour
-            const minuteSeconds = 60; // number of seconds in a minute
-
-            const days = Math.floor(seconds / daySeconds);
-            const hours = Math.floor((seconds % daySeconds) / hourSeconds);
-            const minutes = Math.floor((seconds % hourSeconds) / minuteSeconds);
-            const remainingSeconds = seconds % minuteSeconds;
-
-            return { days, hours, minutes, seconds: remainingSeconds };
-            }
-        function refreshStats() {
-            $.getJSON('/stats.json', function(data) {
-                totalplussymbol = data.balancetotal + ' ₿';
-                $('#balancetotal').html(
-                    totalplussymbol
-                );
-                $('#noemptyaddr').html(
-                    data.noemptyaddr
-                );
-                $('#fanciesNumber').html(
-                    data.fancies.length
-                );
-                const fanciesList = $('#fanciesList');
-                const wordlist = data.wordlist;
-                fanciesList.empty();
-                $.each(data.fancies, function(index, value) {
-                let itemText = value;
-                let ogAddress = value;
-                for (const word of wordlist) {
-                    // highlight the found string
-                    const regex = new RegExp(`(${word})`, 'gi');
-                    itemText = itemText.replace(regex, '<span style="font-weight:bold; color:green;">$1</span>');
-                }
-                const listItem = $('<li>').html(itemText);
-                const link = $('<a>').attr({
-                    'href': `https://www.blockchain.com/explorer/addresses/btc/${ogAddress}`,
-                    'target': '_blank',
-                }).append(listItem);
-                link.appendTo(fanciesList);
-                });
-                $('#checked').html(
-                    data.checked
-                );
-                $('#totaltime').html(
-                    convertSeconds(data.totaltime).days + 'd ' + convertSeconds(data.totaltime).hours + 'h ' + convertSeconds(data.totaltime).minutes + 'm ' + convertSeconds(data.totaltime).seconds + 's'
-                );
-                $('#average').html(
-                    data.average
-                );
-                const balanceList = $('#balanceList');
-                balanceList.empty();
-                $.each(data.balancelist, function(index, value) {
-                const listBItem = $('<li>').html(value);
-                const linkB = $('<a>').attr({
-                    'href': `https://www.blockchain.com/explorer/addresses/btc/${value}`,
-                    'target': '_blank',
-                }).append(listBItem);
-                linkB.appendTo(balanceList);
-                });
-            });
-        }
-        $(document).ready(function() {
-            setInterval(refreshStats, 1000);
-        });
-    </script>
 </head>
 <body>
-    <div class="container">
-        <h1 class="my-4">Stats</h1>
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Balance</h5>
-                        <p class="card-text"><div id="balancetotal">0</div></p>
-                    </div>
+    <header>
+        <div class="logo">BBaVAC_V2.0</div>
+        <div class="header-actions">
+            <button class="btn btn-help" onclick="openReadme()">[?] HELP</button>
+            <div class="status-badge state-stopped">
+                <div class="status-dot"></div>
+                <span>ENGINE_OFFLINE</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="dashboard">
+            <div class="card">
+                <div class="card-title">TOTAL_CHECKED</div>
+                <div id="checked" class="card-value primary">0</div>
+            </div>
+            <div class="card">
+                <div class="card-title">BALANCE_FOUND</div>
+                <div id="balancetotal" class="card-value success">0.00000000 BTC</div>
+            </div>
+            <div class="card">
+                <div class="card-title">HITS</div>
+                <div id="noemptyaddr" class="card-value success">0</div>
+            </div>
+            <div class="card">
+                <div class="card-title">VANITY_HITS</div>
+                <div id="fanciesNumber" class="card-value warning">0</div>
+            </div>
+            <div class="card">
+                <div class="card-title">CPU_LOAD</div>
+                <div id="cpu-usage" class="card-value">0%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">MEM_LOAD</div>
+                <div id="ram-usage" class="card-value">0%</div>
+            </div>
+        </section>
+
+        <section class="control-panel">
+            <div class="controls-group">
+                <button id="btn-start" class="btn btn-success" onclick="sendControl('start')">▶ START</button>
+                <button id="btn-resume" class="btn" onclick="sendControl('resume')" style="display:none;">▶ RESUME</button>
+                <button id="btn-pause" class="btn btn-warning" onclick="sendControl('pause')" style="display:none;">⏸ PAUSE</button>
+                <button id="btn-stop" class="btn btn-danger" onclick="sendControl('stop')" style="display:none;">⏹ SHUTDOWN</button>
+                <button class="btn" onclick="openDictionaryManager()">📁 DICTIONARY_MGR</button>
+            </div>
+            <div class="settings-group">
+                <label>THREADS: <input type="number" id="setting-threads" class="input-field" value="10" min="1"></label>
+                <label>DELAY: <input type="number" id="setting-throttle" class="input-field" value="0.0" step="0.1" min="0"></label>
+                <label><input type="checkbox" id="setting-verbose"> VERBOSE</label>
+                <button class="btn" onclick="sendSettings()">APPLY_CFG</button>
+            </div>
+        </section>
+
+        <section class="log-container">
+            <div class="log-header">
+                <div class="log-title">LIVE_ACTIVITY_FEED</div>
+                <div id="scans-per-sec">0 scans/sec</div>
+            </div>
+            <div id="log-body" class="log-body">
+                <div class="log-entry info">BOOTING BBaVAC KERNEL...</div>
+            </div>
+        </section>
+
+        <section class="discoveries-container">
+            <div class="list-container">
+                <div class="list-title">💎 BALANCE_DISCOVERIES</div>
+                <ul id="balanceList" class="list-items"></ul>
+            </div>
+            <div class="list-container">
+                <div class="list-title">✨ VANITY_HITS</div>
+                <ul id="fanciesList" class="list-items"></ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Dictionary Management -->
+    <div id="dictModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>DICTIONARY_MANAGER</h2>
+                <button class="btn btn-danger" onclick="closeDictionaryManager()">X</button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <label>CUSTOM_PRIVATE_KEYS.TXT</label>
+                    <textarea id="text-custom-keys" spellcheck="false"></textarea>
+                    <button class="btn" onclick="saveFile('custom_private_keys.txt', 'text-custom-keys')">SAVE_KEYS</button>
+                </div>
+                <div>
+                    <label>PIECES.TXT (VANITY_WORDS)</label>
+                    <textarea id="text-pieces" spellcheck="false"></textarea>
+                    <button class="btn" onclick="saveFile('pieces.txt', 'text-pieces')">SAVE_WORDS</button>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Balance Addresses</h5>
-                        <p class="card-text"><div id="noemptyaddr">0</div></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Vanity Addresses</h5>
-                        <p class="card-text"><div id="fanciesNumber">0</div></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Total Checked</h5>
-                        <p class="card-text"><div id="checked">0</div></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Total Time</h5>
-                        <p class="card-text"><div id="totaltime">0</div></p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Average per second</h5>
-                        <p class="card-text"><div id="average">0</div></p>
-                    </div>
-                </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeDictionaryManager()">CLOSE</button>
             </div>
         </div>
     </div>
-    <div class="container">
-        <h3>Vanity Addresses:</h3>
-        <ul id="fanciesList"></ul>
+
+    <!-- README Modal -->
+    <div id="readmeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>HOW_IT_WORKS</h2>
+                <button class="btn btn-danger" onclick="closeReadme()">X</button>
+            </div>
+            <div class="modal-body readme-text">
+                <p>> BBaVAC is a high-speed Bitcoin Balance and Vanity Address Checker.</p>
+                <p>> 1. The engine generates random Private Keys or loads them from <b>custom_private_keys.txt</b>.</p>
+                <p>> 2. It derives the Legacy address and checks for non-zero balances via API.</p>
+                <p>> 3. It scans for patterns defined in <b>pieces.txt</b> to find "Vanity" addresses.</p>
+                <p>> 4. <b>IMPORTANT:</b> Adjust THREADS for speed. Higher values use more CPU. Add DELAY if you hit API limits.</p>
+                <p>> 5. All discoveries are saved to the <b>output/</b> directory and <b>discovery.txt</b>.</p>
+                <hr>
+                <p class="warning">PRESS 'START' TO INITIALIZE THE KERNEL.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="closeReadme(); sendControl('start');">I UNDERSTAND, START SCAN</button>
+            </div>
+        </div>
     </div>
-    <div class="container">
-        <h3>Balance Addresses:</h3>
-        <ul id="balanceList"></ul>
-    </div>
-    <!-- Include Bootstrap JS and jQuery -->
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        const socket = io();
+        let lastChecked = 0;
+        let lastTime = Date.now();
+
+        socket.on('connect', () => {
+            addLog('CONNECTED TO CORE', 'success');
+        });
+
+        socket.on('stats', (data) => {
+            $('#checked').text(data.checked.toLocaleString());
+            $('#balancetotal').text(data.balancetotal.toFixed(8) + ' BTC');
+            $('#noemptyaddr').text(data.noemptyaddr);
+            $('#fanciesNumber').text(data.fancies);
+
+            const balanceList = $('#balanceList');
+            balanceList.empty();
+            data.discoveries.forEach(item => {
+                const addr = item.split(' ')[0];
+                balanceList.append(`<li class="list-item"><a href="https://www.blockchain.com/explorer/addresses/btc/${addr}" target="_blank">${item}</a></li>`);
+            });
+
+            const now = Date.now();
+            const elapsed = (now - lastTime) / 1000;
+            if (elapsed >= 1) {
+                const diff = data.checked - lastChecked;
+                const sps = (diff / elapsed).toFixed(2);
+                $('#scans-per-sec').text(sps + ' scans/sec');
+                lastChecked = data.checked;
+                lastTime = now;
+            }
+        });
+
+        socket.on('log', (data) => {
+            addLog(data.msg, data.type);
+        });
+
+        socket.on('sys_stats', (data) => {
+            $('#cpu-usage').text(data.cpu.toFixed(1) + '%');
+            $('#ram-usage').text(data.ram.toFixed(1) + '%');
+        });
+
+        socket.on('engine_state', (data) => {
+            $('#setting-threads').val(data.threads);
+            $('#setting-throttle').val(data.throttle);
+            $('#setting-verbose').prop('checked', data.verbose);
+            
+            const badge = $('.status-badge');
+            const text = $('.status-badge span');
+            
+            badge.removeClass('state-running state-paused state-stopped');
+            
+            if (!data.is_running) {
+                text.text('ENGINE_OFFLINE');
+                badge.addClass('state-stopped');
+                $('#btn-start').show();
+                $('#btn-resume').hide();
+                $('#btn-pause').hide();
+                $('#btn-stop').hide();
+            } else if (data.is_paused) {
+                text.text('ENGINE_PAUSED');
+                badge.addClass('state-paused');
+                $('#btn-start').hide();
+                $('#btn-resume').show();
+                $('#btn-pause').hide();
+                $('#btn-stop').show();
+            } else {
+                text.text('ENGINE_ACTIVE');
+                badge.addClass('state-running');
+                $('#btn-start').hide();
+                $('#btn-resume').hide();
+                $('#btn-pause').show();
+                $('#btn-stop').show();
+            }
+        });
+
+        socket.on('config_files', (data) => {
+            $('#text-custom-keys').val(data.custom_keys);
+            $('#text-pieces').val(data.pieces);
+        });
+
+        socket.on('save_status', (data) => {
+            addLog(`FILE_SAVE [${data.filename}]: ${data.status.toUpperCase()}`, data.status === 'success' ? 'success' : 'error');
+        });
+
+        function sendControl(action) {
+            socket.emit('control', { action: action });
+        }
+
+        function sendSettings() {
+            socket.emit('settings', {
+                threads: $('#setting-threads').val(),
+                throttle: $('#setting-throttle').val(),
+                verbose: $('#setting-verbose').is(':checked')
+            });
+        }
+
+        function openDictionaryManager() {
+            socket.emit('get_config_files');
+            $('#dictModal').show();
+        }
+
+        function closeDictionaryManager() {
+            $('#dictModal').hide();
+        }
+
+        function openReadme() {
+            $('#readmeModal').show();
+        }
+
+        function closeReadme() {
+            $('#readmeModal').hide();
+        }
+
+        function saveFile(filename, textareaId) {
+            const content = $('#' + textareaId).val();
+            socket.emit('save_config_file', { filename: filename, content: content });
+        }
+
+        function addLog(msg, type) {
+            const logBody = $('#log-body');
+            const entry = $(`<div class="log-entry ${type}"></div>`).text(`[${new Date().toLocaleTimeString()}] ${msg}`);
+            logBody.append(entry);
+            
+            if (logBody.children().length > 200) {
+                logBody.children().first().remove();
+            }
+            
+            logBody.scrollTop(logBody[0].scrollHeight);
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('dictModal')) {
+                closeDictionaryManager();
+            }
+            if (event.target == document.getElementById('readmeModal')) {
+                closeReadme();
+            }
+        }
+        
+        // Show readme on first load if engine is stopped
+        $(document).ready(() => {
+            setTimeout(() => {
+                if ($('.status-badge').hasClass('state-stopped')) {
+                    openReadme();
+                }
+            }, 500);
+        });
+    </script>
 </body>
 </html>

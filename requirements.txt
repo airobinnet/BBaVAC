@@ -1,6 +1,11 @@
-Flask==2.1.2
+Flask==2.3.3
+Werkzeug==2.3.7
 argparse==1.4.0
 base58==2.1.0
 bit==0.8.0
 futures==3.0.5
 requests==2.27.1
+flask-socketio==5.3.6
+eventlet==0.33.3
+colorama==0.4.4
+psutil
